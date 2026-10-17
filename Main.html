@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Application Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9eef2;--panel:#f7f9fb;--ink:#13233a;--mute:#5d6b7c;--line:#cdd6df;
+--saved:#7a8ba0;--applied:#2f6fdb;--interview:#d98a00;--offer:#12805c;--rejected:#b4483f;--accent:#13233a;--on-accent:#f7f9fb}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1724;--panel:#16233a;--ink:#e6edf5;--mute:#93a2b5;--line:#2a3b55;
+--saved:#8a9bb0;--applied:#5b94f2;--interview:#f0a828;--offer:#35b58a;--rejected:#e0746b;--accent:#e6edf5;--on-accent:#0e1724}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Figtree,system-ui,sans-serif;min-height:100vh}
+h1,h2,.company{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif}
+header{padding:28px clamp(16px,4vw,48px) 8px;display:flex;flex-wrap:wrap;gap:16px;align-items:end;justify-content:space-between}
+h1{margin:0;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1}
+.sub{color:var(--mute);margin:6px 0 0}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--rejected)}
+:focus-visible{outline:2px solid var(--applied);outline-offset:2px}
+#search{border:1px solid var(--line);background:var(--panel);padding:8px 12px;border-radius:8px;min-width:200px}
+.pipeline{margin:16px clamp(16px,4vw,48px) 0}
+.bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line);gap:2px}
+.bar i{display:block;transition:flex-grow .4s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:10px;color:var(--mute);font-size:14px}
+.legend b{color:var(--ink);font-weight:600}
+.legend span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:7px}
+.board{display:grid;grid-template-columns:repeat(5,minmax(240px,1fr));gap:14px;padding:22px clamp(16px,4vw,48px) 48px;overflow-x:auto}
+.col{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:10px;padding:12px;min-height:300px}
+.col.over{outline:2px dashed var(--c);outline-offset:-4px}
+.col h2{margin:0 0 10px;font-size:17px;font-weight:600;display:flex;justify-content:space-between}
+.col h2 small{color:var(--mute);font-family:Figtree,sans-serif;font-weight:500}
+.card{background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:8px;padding:10px 12px;margin-bottom:10px;cursor:grab;text-align:left;width:100%;display:block}
+.card:hover{border-color:var(--ink)}
+.card.drag{opacity:.4}
+.company{font-weight:600;font-size:16px}
+.role{color:var(--mute)}
+.meta{display:flex;justify-content:space-between;margin-top:6px;font-size:13px;color:var(--mute)}
+.empty{color:var(--mute);font-size:14px;padding:6px 2px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:0;width:min(520px,94vw)}
+dialog::backdrop{background:rgba(10,20,35,.55)}
+form{padding:22px;display:grid;gap:12px}
+form h2{margin:0 0 4px;font-size:22px}
+label{display:grid;gap:4px;font-size:14px;color:var(--mute)}
+label input,label select,label textarea{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:8px 10px;border-radius:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:8px;justify-content:space-between;margin-top:4px}
+[hidden]{display:none!important}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;padding:8px 14px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);font-weight:600}
+.sheet{margin:22px clamp(16px,4vw,48px) 48px;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:860px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{position:sticky;top:0;background:var(--panel);font-weight:600;white-space:nowrap}
+th button{border:0;background:none;font:inherit;font-weight:600;cursor:pointer;padding:0}
+th button:hover{text-decoration:underline}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--bg)}
+td.n{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mute)}
+td.d,td.s{white-space:nowrap}
+td a{color:inherit}
+select.st{border:1px solid var(--line);border-left:4px solid var(--c);background:var(--bg);color:var(--ink);padding:4px 6px;border-radius:6px}
+.filters{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end;margin:18px clamp(16px,4vw,48px) 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.chip:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+.chip span{color:var(--mute);font-size:13px}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.chip[aria-pressed=true] span{color:inherit;opacity:.8}
+.filters label{display:grid;gap:2px;font-size:13px;color:var(--mute)}
+.filters label input,.filters label select{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 8px;border-radius:8px}
+.filters label.chk{display:flex;gap:6px;align-items:center;padding-bottom:6px}
+#count{color:var(--mute);font-size:14px;padding-bottom:7px;margin-left:auto}
+tr.grp{cursor:pointer;background:var(--bg)}
+tr.grp td{border-left:4px solid var(--c);padding:10px 12px;font-family:"Bricolage Grotesque",Figtree,sans-serif;font-size:16px}
+tr.grp .cnt{color:var(--mute);font-family:Figtree,sans-serif;font-size:14px;margin-left:6px}
+tr.grp:hover{background:var(--line)}
+tr td.empty{padding:16px 12px}
+.board{grid-template-columns:repeat(var(--n,5),minmax(240px,1fr))!important}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Job applications</h1>
+    <p class="sub" id="summary"></p>
+  </div>
+  <div class="tools">
+    <input id="search" type="search" placeholder="Search company or role" aria-label="Search applications">
+    <div class="seg" role="group" aria-label="View"><button id="vBoard" aria-pressed="true">Board</button><button id="vSheet" aria-pressed="false">Sheet</button></div>
+    <button class="btn" id="export">Export</button>
+    <button class="btn" id="import">Import</button>
+    <button class="btn primary" id="add">Add application</button>
+    <input type="file" id="file" accept="application/json" hidden>
+  </div>
+</header>
+<div class="pipeline"><div class="bar" id="bar"></div><div class="legend" id="legend"></div></div>
+<div class="filters">
+  <div class="chips" id="chips" role="group" aria-label="Filter by status"></div>
+  <label>Applied from<input type="date" id="fFrom"></label>
+  <label>Applied to<input type="date" id="fTo"></label>
+  <label>Posting<select id="fExp"><option value="any">Any</option><option value="live">Still open</option><option value="expired">Expired</option></select></label>
+  <label class="chk"><input type="checkbox" id="fGroup" checked> Group sheet by status</label>
+  <button class="btn" id="fClear" hidden>Clear filters</button>
+  <span id="count"></span>
+</div>
+<main class="board" id="board"></main>
+<main class="sheet" id="sheet" hidden></main>
+
+<dialog id="dlg">
+  <form id="form" method="dialog">
+    <h2 id="dlgTitle">Add application</h2>
+    <div class="row">
+      <label>Company<input name="company" required></label>
+      <label>Role<input name="role" required></label>
+    </div>
+    <div class="row">
+      <label>Status<select name="status"></select></label>
+      <label>Date applied<input name="date" type="date"></label>
+    </div>
+    <div class="row">
+      <label>Salary or range<input name="salary" placeholder="e.g. 80–95k"></label>
+      <label>Job posting link<input name="url" type="url" placeholder="https://"></label>
+    </div>
+    <label>Notes<textarea name="notes" rows="4" placeholder="Contacts, interview dates, follow-ups"></textarea></label>
+    <div class="actions">
+      <button type="button" class="btn danger" id="del" hidden>Delete</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn" id="cancel">Cancel</button>
+      <button class="btn primary" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="application/json" id="seed">[{"id":"efda7be5-b386-48a7-840e-15d052a9a897","company":"Kōrure","role":"Customer Service Representative","status":"applied","date":"2026-10-17","salary":"₱150 – ₱210 per hour","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1790000000000},{"id":"c67a1acf-81e1-4cb4-980d-d264bcdc53c3","company":"BruntWork","role":"WFH QA Engineer (Desktop Applications)","status":"saved","date":"2026-10-17","salary":"₱70,930 – ₱75,690 per month","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Metro Manila.","updated":1789999999999},{"id":"612f0e06-f841-497d-9a46-27b85836dde1","company":"Askable","role":"Software Engineer, AI Coding Tasks (Contract)","status":"applied","date":"2026-10-17","salary":"$100 per hour (USD)","url":"","notes":"Applied on JobStreet. Location: Manila City, Metro Manila.","updated":1789999999998},{"id":"8c206f81-b1a3-4ca2-aaa7-51b79b19a136","company":"STAFFVIRTUAL","role":"Web Development Specialist (Remote)","status":"applied","date":"2026-10-17","salary":"₱84,000 – ₱87,000 per month","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999997},{"id":"011aa4fa-9046-47b8-8edc-62ec92b02997","company":"BruntWork","role":"WFH WordPress UI/UX Developer (Salesforce Integrations)","status":"saved","date":"2026-10-17","salary":"₱719 – ₱819 per hour","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999996},{"id":"08028167-ff85-4a13-9fdf-947aef26603e","company":"Superpowers HQ","role":"Executive Assistant | Work From Home","status":"saved","date":"2026-10-16","salary":"$8 – $10 per hour (USD)","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999995},{"id":"983f280d-236b-4d82-8bc2-172ce6714680","company":"Foundever®","role":"IT Support (IT Systems Specialist) | Onsite Cebu - Open for IT Fresh Graduate!","status":"applied","date":"2026-10-16","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999994},{"id":"c8e798fc-0706-4d3b-8187-21b69908e7a3","company":"Virtual Innovations","role":"Technical Support / Customer Service Representative (WFH)","status":"applied","date":"2026-10-15","salary":"$880 – $960 per month (USD)","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999993},{"id":"8f613672-e96e-40d1-8543-bfb3e922db25","company":"CHITTICK FIRE & SECURITY CORPORATION","role":"Data Entry / Data Encoder Remote","status":"applied","date":"2026-10-15","salary":"₱17,800 – ₱21,000 per month","url":"","notes":"Applied on JobStreet. Location: Manila City, Metro Manila. Posting expired.","updated":1789999999992},{"id":"da04d471-3ff4-43b8-bc5c-5b2760ca889f","company":"CLEVRCARE","role":"Fresh Graduate Appointment Setter, Work From Home with Paid Training","status":"applied","date":"2026-10-15","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu.","updated":1789999999991},{"id":"d47387ec-e24f-4aab-9595-6175da13cba2","company":"Hyremote","role":"IT Support| 100% Work From Home | Salary Growth","status":"applied","date":"2026-10-15","salary":"$5 – $7 per hour (USD)","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Manila City, Metro Manila.","updated":1789999999990},{"id":"e19e704d-5c3b-42df-8fc8-cb0e59175370","company":"Global Medical Virtual Assistants","role":"IT Specialist WFH | Systems & Automations","status":"applied","date":"2026-10-15","salary":"₱50,000 – ₱53,000 per month","url":"","notes":"Applied on JobStreet. Location: Quezon City, Metro Manila.","updated":1789999999989},{"id":"100699be-631e-4e77-a8f7-4c1b7d0263e0","company":"A7 Recruitment Corporation","role":"Technical Support Representative","status":"applied","date":"2026-10-15","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu, Central Visayas.","updated":1789999999988},{"id":"1ed50803-0f82-415c-a001-3763a91bcd1e","company":"Primary Properties Corporation","role":"IT Specialist","status":"applied","date":"2026-10-15","salary":"₱18,000 – ₱25,000 per month","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999987},{"id":"e4742a06-4994-441f-a1ea-4da6fe91ac18","company":"Gensai Career And Consulting","role":"日系IT企業 QAマネージャー","status":"saved","date":"2026-10-14","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu, Central Visayas.","updated":1789999999986},{"id":"71cdc91d-75d3-48fb-beb5-d9ac182e858d","company":"Teradyne Philippines, Ltd. - Cebu","role":"Test Engineer (IST, Philippines: Cebu)","status":"saved","date":"2026-10-14","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Basak, Compostela, Cebu.","updated":1789999999985},{"id":"e7c4fc4d-0b88-484a-ac36-466dd49a7c89","company":"Lexmark Research & Development Corporation","role":"Test Development Engineer w/ Signing Bonus","status":"saved","date":"2026-10-14","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999984},{"id":"6b99c05d-a655-4013-b6f5-f81e28fc15b6","company":"Pryce Gases, Inc. (NCR)","role":"Manual Tester I","status":"saved","date":"2026-10-14","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999983},{"id":"317ba36e-b455-4c57-b04c-34cbc0afd925","company":"RipeConcepts, Inc.","role":"Manual QA Tester","status":"applied","date":"2026-10-14","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999982},{"id":"7c77807e-cd39-41ac-85ae-38a564a7ed3e","company":"TDCX Philippines","role":"Technical Support Advisor (Consumer Electronics Account | Work from Home*)","status":"applied","date":"2026-10-15","salary":"₱24,000 – ₱33,000 per month","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Pasig City, Metro Manila.","updated":1789999999981},{"id":"49388dbf-2609-4047-abf0-17b4180c766b","company":"OfficePartners, 360 Inc.","role":"Junior IT Support Specialist / Service Desk Technician","status":"applied","date":"2026-10-13","salary":"₱25,000 – ₱28,000 per month","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999980},{"id":"b8ce23ab-b58f-4685-971c-df88ca45f898","company":"InfiniVAN Inc.","role":"IT Desktop Support","status":"applied","date":"2026-10-13","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999979},{"id":"226ee9e9-9f4f-4cc3-9ed1-016fb66ed172","company":"SM Retail, Inc. - Corporate","role":"IT Associate (SM Cebu)","status":"applied","date":"2026-10-14","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu.","updated":1789999999978},{"id":"baa89dc5-7ffe-46ce-bf2e-7ba8d81b36cc","company":"Private Advertiser","role":"CSR| VOICE& NON-VOICE | VIRTUAL PROCESS | START ASAP","status":"applied","date":"2026-10-13","salary":"₱21,000 – ₱27,000 per month","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999977},{"id":"0b720447-89d9-4e0a-b424-decccd25bf6e","company":"Cognizant Technology Solutions Philippines Inc.","role":"Retail IT Support Specialist","status":"saved","date":"2026-10-13","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999976},{"id":"24382ed7-ee2d-4d8c-b6dc-91aa75fc24d0","company":"Aboitiz Power Corporation (Power)","role":"Quality Assurance Tester","status":"saved","date":"2026-10-11","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Dumaguete City, Negros Oriental.","updated":1789999999975},{"id":"56d7b847-8f70-465d-802a-fed99336d22f","company":"Arbitrail MNL Inc.","role":"Software QA Agent | Start ASAP | Alabang","status":"applied","date":"2026-10-09","salary":"","url":"","notes":"Applied on JobStreet. Location: Ayala Alabang, Muntinlupa City, Metro Manila.","updated":1789999999974},{"id":"a293af7e-b5db-4333-9e7e-c7075aa1b16b","company":"Business Service Group","role":"Customer Service Representative - 100% Permanent WFH","status":"rejected","date":"2026-10-11","salary":"₱27,000 – ₱30,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Santa Rosa City, Laguna.","updated":1789999999973},{"id":"df7e91ec-bb5a-4dab-b444-924178ecd5cb","company":"Complete Development (CoDev)","role":"QA Automation Engineer - WFH/Remote","status":"applied","date":"2026-10-09","salary":"","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999972},{"id":"3b8e24e5-b877-4371-b5ab-0572bbbaf597","company":"WELOCALIZE","role":"AI Video Annotator","status":"applied","date":"2026-10-09","salary":"$3.50 per hour (USD)","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Manila City, Metro Manila.","updated":1789999999971},{"id":"6214c172-bc90-4bde-a229-aa4028883d19","company":"C9","role":"Software QA Analyst","status":"applied","date":"2026-10-09","salary":"","url":"","notes":"Applied on JobStreet. Location: Manila City, Metro Manila.","updated":1789999999970},{"id":"4673e6ad-8317-4c20-81ce-636a34bc3bbb","company":"Private Advertiser","role":"Appointment Setter | Permanent WFH","status":"rejected","date":"2026-10-11","salary":"₱37,000 – ₱55,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Cebu, Central Visayas.","updated":1789999999969},{"id":"7eb1b25f-1081-444d-95a7-c452e62f4328","company":"BruntWork","role":"WFH QA Engineer (Desktop Applications)","status":"saved","date":"2026-10-09","salary":"₱80,000 per month","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Metro Manila. Posting expired.","updated":1789999999968},{"id":"0f686564-c824-4c38-89f1-3aa38e382db0","company":"Live Services Group","role":"Virtual Assistant/Admin & Email manager | AU Client (permanent work from home)","status":"applied","date":"2026-10-09","salary":"₱25,000 – ₱30,000 per month","url":"","notes":"Applied on JobStreet. Location: Antipolo City, Rizal.","updated":1789999999967},{"id":"4e4eb3dd-8e8e-4088-80a3-9454ecb860a8","company":"DW Morgan Philippines","role":"IT Intern (Remote)","status":"applied","date":"2026-10-09","salary":"₱18,000 per month","url":"","notes":"Applied on JobStreet. Location: Mandaluyong City, Metro Manila.","updated":1789999999966},{"id":"d5504781-a3e2-4cef-b98f-25005a55b0b3","company":"RAY AI","role":"Virtual Executive Assistant","status":"applied","date":"2026-10-09","salary":"Up to $1,000/month USD + bonus (USD)","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999965},{"id":"6a3db886-8820-43dc-a321-498e7c257bc8","company":"Atomic AI Pty Ltd","role":"Graduate AI Assistant – Remote","status":"applied","date":"2026-10-08","salary":"₱20,000 per month","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999964},{"id":"6d7246db-8dd0-4203-8863-a43d2e5e3fa7","company":"Heroes of Digital","role":"Website Designer Remote","status":"rejected","date":"2026-10-11","salary":"$1,000 – $1,250 per month (SGD)","url":"","notes":"JobStreet marked: unlikely to progress. Location: Manila City, Metro Manila.","updated":1789999999963},{"id":"b17647b4-ab1b-4a72-9632-23a1245f20ff","company":"Pryce Gases, Inc. (NCR)","role":"Manual Tester I","status":"saved","date":"2026-10-08","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999962},{"id":"99235f35-d7fd-409e-83c4-f659963b8fbf","company":"Electronic Transfer and Advance Processing Inc.","role":"Junior Software Quality Assurance Engineer","status":"applied","date":"2026-10-08","salary":"₱25,000 – ₱30,000 per month","url":"","notes":"Applied on JobStreet. Location: Makati City, Metro Manila.","updated":1789999999961},{"id":"ab4f3c37-051e-4e57-9689-143723adccb8","company":"TOA Global","role":"Junior AI Content Specialist","status":"applied","date":"2026-10-08","salary":"PHP30k - PHP37k + HMO and non-taxable allowance","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999960},{"id":"0e97bfab-b454-44a0-bc9c-51422fe9d57d","company":"Lennor Metier","role":"Oracle EPM Cloud Consultant","status":"applied","date":"2026-10-13","salary":"₱40,000 – ₱50,000 per month","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu.","updated":1789999999959},{"id":"4aaf2158-ff67-4849-b712-a231e05e05b5","company":"Private Advertiser","role":"Junior Web and SQL Developer","status":"rejected","date":"2026-10-09","salary":"₱25,000 – ₱30,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Makati City, Metro Manila.","updated":1789999999958},{"id":"5f117123-c4ba-4d71-81a2-d84328ff8f5c","company":"Lhoopa Inc.","role":"Web Developer (Fresh Graduates are welcome to apply!)","status":"applied","date":"2026-10-07","salary":"","url":"","notes":"Applied on JobStreet. Location: Mandaluyong City, Metro Manila.","updated":1789999999957},{"id":"fb7c80b4-aa9f-4b45-8109-a3d32dc03782","company":"Emapta","role":"Software Test Engineer | WFH | Night Shift | Weekends Off | Day 1 HMO","status":"applied","date":"2026-10-07","salary":"","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999956},{"id":"4b56dd71-14bd-444a-bba9-a9a121cb985d","company":"Elite Global Sourcing Phil. Inc.","role":"CSR - Game Quality Assurance","status":"applied","date":"2026-10-07","salary":"","url":"","notes":"Applied on JobStreet. Location: Ortigas, Pasig City, Metro Manila.","updated":1789999999955},{"id":"7929d41d-d587-4331-b696-59edf36092da","company":"Gensai Career And Consulting","role":"Quality Assurance Analyst","status":"saved","date":"2026-10-05","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu, Central Visayas.","updated":1789999999954},{"id":"6af961c8-fe5f-4363-ac35-0e894c0114e4","company":"The Chat Agency","role":"Customer Support and Data Entry (Non-Voice)","status":"applied","date":"2026-10-05","salary":"₱30,000 – ₱40,000 per month","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999953},{"id":"30a772a5-3bf4-4504-af4e-6f2eaf003ad3","company":"ELEVATED PLUS INC.","role":"Software Tester- US Account (Project- Based)","status":"applied","date":"2026-10-05","salary":"₱17,000 – ₱19,000 per month","url":"","notes":"Applied on JobStreet. Location: Makati City, Metro Manila.","updated":1789999999952},{"id":"70632c76-b728-44ff-a572-e15632e85c51","company":"Nityo Infotech Services Philippines Inc.","role":"Junior Manual QA Tester","status":"applied","date":"2026-10-05","salary":"₱25,000 – ₱28,000 per year","url":"","notes":"Applied on JobStreet. Location: Makati City, Metro Manila.","updated":1789999999951},{"id":"bc5039a8-4608-4eac-8a7a-4e342a24cc0e","company":"Hi-Precision Diagnostics Center, Inc.","role":"System Tester","status":"applied","date":"2026-10-05","salary":"","url":"","notes":"Applied on JobStreet. Location: Quezon City, Metro Manila.","updated":1789999999950},{"id":"0ead7520-1f89-4f4d-9b4d-c6b4b8eb3fc9","company":"Beyondsoft International Singapore","role":"Software Test Engineer","status":"applied","date":"2026-10-05","salary":"₱26,000 – ₱38,000 per month","url":"","notes":"Applied on JobStreet. Location: Manila City, Metro Manila.","updated":1789999999949},{"id":"50a7648e-3c7f-4fd0-8e90-e72db730feda","company":"YML Group Outsource Manila Inc.","role":"Junior Operation Support/ Tester","status":"applied","date":"2026-10-03","salary":"","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999948},{"id":"12052d51-b6e5-4515-a643-bbd93de97f9f","company":"SuiteWorks","role":"Software Engineer Trainee (Android/ iOS)","status":"saved","date":"2026-10-02","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999947},{"id":"8f5716bf-f54a-4423-943d-b8a60cab7bd2","company":"Gothong Southern Careers","role":"ASSOCIATE SOFTWARE TEST ENGINEER","status":"saved","date":"2026-10-02","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999946},{"id":"1b16433f-7c1b-44f9-bafe-f5b5b7cb9a2c","company":"Sarah Cobbett Occupational Therapy","role":"Business Software Developer","status":"applied","date":"2026-10-02","salary":"₱23,000 – ₱31,000 per month","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999945},{"id":"4b39f466-e114-48e5-97a5-de3e351355f6","company":"Lexmark Research & Development Corporation","role":"UX Researcher (Content Design) | Hybrid","status":"saved","date":"2026-10-02","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999944},{"id":"7371a402-b6c2-4b62-a4a1-20ee73e3464c","company":"Accenture","role":"Apply Now as Software Engineering Associate at Accenture Cebu","status":"saved","date":"2026-09-30","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu, Central Visayas.","updated":1789999999943},{"id":"4d0e7eb2-13eb-4bee-930c-97c17ae27ef1","company":"Accenture","role":"We're Hiring Software Engineering Associate at Accenture Cebu","status":"applied","date":"2026-09-30","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu, Central Visayas.","updated":1789999999942},{"id":"1e3accd0-d105-4410-a06d-df2b449e8ff2","company":"Concentrix Philippines","role":"Chat Support - Up to 25k at Cebu Concentrix","status":"saved","date":"2026-09-29","salary":"₱20,000 – ₱25,000 per month","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu, Central Visayas.","updated":1789999999941},{"id":"ff022305-1213-4228-bb7d-7b2b24371694","company":"Logix BPO","role":"Pure Non-Voice Chat Support Representative + Urgent Hiring + Cebu Onsite","status":"rejected","date":"2026-10-02","salary":"₱20,000 – ₱25,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Cebu City, Cebu.","updated":1789999999940},{"id":"3c83c7e1-7799-403d-8cb8-65f7193c456d","company":"Wipro Philippines Inc.","role":"Email Support Representative (Non-Voice) | No Required Experience","status":"applied","date":"2026-09-29","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu.","updated":1789999999939},{"id":"693c40e1-f417-44c0-817e-200c3756192a","company":"Azpired Inc.","role":"Technical Consultant","status":"applied","date":"2026-09-30","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu. Posting expired.","updated":1789999999938},{"id":"b709c909-4180-4711-904a-8279e279c0ad","company":"TopRank Review Academy","role":"Office Staff - (CEBU BRANCH)","status":"applied","date":"2026-09-28","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu.","updated":1789999999937},{"id":"37a25264-edf3-490a-850e-eeb518820323","company":"Optum, a UnitedHealth Group Company","role":"Tech Support Analyst - Cebu","status":"saved","date":"2026-09-28","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999936},{"id":"4eff2c14-8d66-48eb-a8ff-ebd3eb54be88","company":"HMP Phil Representative","role":"ON-SITE Sourcing Assistant | Paid Training and NO EXPERIENCE NEEDED - CEBU","status":"applied","date":"2026-09-29","salary":"₱36,000 per month","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu.","updated":1789999999935},{"id":"213fc5f7-45b5-4380-b71a-86acbb21fcf3","company":"Focus People","role":"Part-Time Virtual Assistant – Admin & Content Support - CEBU BASED","status":"applied","date":"2026-09-28","salary":"$5 – $7 per month (AUD)","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu. Posting expired.","updated":1789999999934},{"id":"7b6c27f7-c522-4709-ae54-60aedf8bdec9","company":"Virtual Champs Global","role":"Data Entry VA (Site-Mapping)","status":"applied","date":"2026-09-28","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu. Posting expired.","updated":1789999999933},{"id":"c7a5265e-f4e0-4e5a-8f1f-6aa0f953bf1f","company":"ANRITSU PHILS INC.","role":"Software Engineer","status":"applied","date":"2026-09-28","salary":"₱33,000 – ₱40,000 per month","url":"","notes":"Applied on JobStreet. Location: Quezon City, Metro Manila. Posting expired.","updated":1789999999932},{"id":"715d5126-86c0-49ef-9151-d1db6b7f5b03","company":"Finch Harbor","role":"Quality Assurance Specialist (Remote, US Night Shift)","status":"applied","date":"2026-09-26","salary":"$12 per hour (USD)","url":"","notes":"Applied on JobStreet. Location: Metro Manila. Posting expired.","updated":1789999999931},{"id":"9fc5c42e-ff27-4b6e-b45f-07f2094da28c","company":"iCXeed Philippines Inc.","role":"Associate QA Expert (Permanent WFH)","status":"applied","date":"2026-09-26","salary":"","url":"","notes":"Applied on JobStreet. Location: Makati City, Metro Manila. Posting expired.","updated":1789999999930},{"id":"df7c43e8-b550-4894-abfa-ac6b53738c86","company":"OPEN INNOVATION INC.","role":"IT QA / QA Analyst","status":"applied","date":"2026-09-25","salary":"","url":"","notes":"Applied on JobStreet. Location: Metro Manila. Posting expired.","updated":1789999999929},{"id":"31fa217f-dc83-4677-8f8a-5d5a6ec85cf5","company":"Megaworld Corporation","role":"Junior Software Engineer (Open for Fresh Graduates)","status":"applied","date":"2026-09-25","salary":"","url":"","notes":"Applied on JobStreet. Location: Taguig City, Metro Manila. Posting expired.","updated":1789999999928},{"id":"27df8a12-4650-43d7-841b-707aac858c19","company":"Aleson Shipping Lines, Inc.","role":"Personal Technical Assistant / PHP & MySQL Web Developer","status":"rejected","date":"2026-09-28","salary":"₱35,000 – ₱45,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Makati City, Metro Manila. Posting expired.","updated":1789999999927},{"id":"717fdc70-bb7d-4b7c-9c0d-faab37f09db7","company":"Emapta","role":"Associate Quality Assurance Specialist | Project-based | WFH | Day Shift","status":"applied","date":"2026-09-25","salary":"Weekends Off","url":"","notes":"Applied on JobStreet. Location: Metro Manila. Posting expired.","updated":1789999999926},{"id":"cea15252-4b43-49e6-a839-a08a55a20527","company":"TaskUs","role":"For Active Pooling Only | Be an AI Prompt Generator at TaskUs Imus!","status":"applied","date":"2026-09-25","salary":"₱34,000 per month","url":"","notes":"Applied on JobStreet. Location: Imus City, Cavite. Posting expired.","updated":1789999999925},{"id":"a5e38ea8-39ac-415a-9408-7c8883ecdb1d","company":"Foundever®","role":"IT Service Desk - Entry Level | Good Comms Skills Needed! Ortigas Site","status":"applied","date":"2026-09-25","salary":"","url":"","notes":"Applied on JobStreet. Location: Mandaluyong City, Metro Manila. Posting expired.","updated":1789999999924},{"id":"5331a1e1-8a10-4cbf-b4fd-647bf6b556a5","company":"Orange and Bronze Software Labs Ltd, Co.","role":"Part-time Junior BA/QA Analyst","status":"saved","date":"2026-09-25","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Metro Manila.","updated":1789999999923},{"id":"bf6d2248-29fb-4774-b189-5acfb15a8014","company":"Vamilo Outsourcing and BPO OPC","role":"QA/Tester role with Dynamics365 experience","status":"applied","date":"2026-09-24","salary":"₱65,000 – ₱85,000 per month","url":"","notes":"Applied on JobStreet. Location: Metro Manila.","updated":1789999999922},{"id":"bbedd53b-a70f-4d35-974a-7b021f50be3e","company":"Accenture","role":"Associate Software Engineer (Entry-Level)","status":"applied","date":"2026-09-25","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Metro Manila.","updated":1789999999921},{"id":"1f8be22f-2945-4967-836a-2e00ccbd748c","company":"Foundever®","role":"Specialist IT (ITSD - Entry Level) | Good Comms Skills Needed! Offers WFH!","status":"applied","date":"2026-09-17","salary":"","url":"","notes":"Applied on JobStreet. Location: Mandaluyong City, Metro Manila. Posting expired.","updated":1789999999920},{"id":"aa384231-30aa-4714-8845-3635dc7f650a","company":"Consumer Tech Ltd.","role":"Website Tester, Content Writer & Virtual Assistant (Part-Time, Remote)","status":"applied","date":"2026-09-17","salary":"$20,000 – $30,000 per month (USD)","url":"","notes":"Applied on JobStreet. Location: Cebu City, Cebu. Posting expired.","updated":1789999999919},{"id":"80f79807-a467-43a7-8cae-eb2233fa990c","company":"Renrui Human Resources Technology Holdings Limited","role":"Game Customer Service Representative-WFH","status":"rejected","date":"2026-09-19","salary":"₱26,000 – ₱38,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Manila City, Metro Manila. Posting expired.","updated":1789999999918},{"id":"3c3cf794-3029-42a2-a697-3f5d87f069d7","company":"Tangent Solutions, Inc.","role":"Quality Assurance Support/Associate","status":"applied","date":"2026-09-17","salary":"","url":"","notes":"Applied on JobStreet. Location: Ortigas, Pasig City, Metro Manila. Posting expired.","updated":1789999999917},{"id":"c088c4e7-3e7e-4677-ae70-d1d532b7d3b3","company":"Joy~Nostalg Group","role":"Information Technology Assistant","status":"applied","date":"2026-09-17","salary":"","url":"","notes":"Applied on JobStreet. Location: Pasig City, Metro Manila. Posting expired.","updated":1789999999916},{"id":"3cae80a8-6e0d-4358-b9f2-551dd0637086","company":"Duo Tax Quantity Surveyors Pty Ltd","role":"IT System Support (WFH, Australian shift)","status":"rejected","date":"2026-09-23","salary":"₱25,000 – ₱35,000 per month","url":"","notes":"JobStreet marked: unlikely to progress. Location: Metro Manila.","updated":1789999999915},{"id":"ba90465c-7e9d-44e8-93ae-d886d39cc01d","company":"Argold Jobs Inc","role":"Software Tester","status":"applied","date":"2026-09-16","salary":"₱30,000 – ₱40,000 per month","url":"","notes":"Applied on JobStreet. Location: Manila City, Metro Manila. Posting expired.","updated":1789999999914},{"id":"d7762c2f-a81e-460e-b61a-f61b337e709a","company":"MicroSourcing","role":"QA Tester - Agentic Web Application","status":"saved","date":"2026-09-16","salary":"₱136,000 – ₱170,000 per month","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Metro Manila. Posting expired.","updated":1789999999913},{"id":"9eca6da1-5566-4059-973f-7d532da89133","company":"Ascendion","role":"10 Manual Testers / Automation Tester - (Makati/ Ortigas) Start ASAP!","status":"applied","date":"2026-09-25","salary":"₱55,000 – ₱60,000 per month","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Metro Manila. Posting expired.","updated":1789999999912},{"id":"24a70db0-e1ff-401f-a87f-ce09817cde9d","company":"Nityo Infotech Services Philippines Inc.","role":"Software QA Tester","status":"applied","date":"2026-09-17","salary":"₱30,000 – ₱35,000 per month","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Makati City, Metro Manila. Posting expired.","updated":1789999999911},{"id":"37269435-589c-429f-8f71-ef9553e3064b","company":"SuiteWorks","role":"Junior IT Specialist","status":"saved","date":"2026-09-15","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu.","updated":1789999999910},{"id":"ee243e21-fe77-498e-b714-9dcdd54bd82b","company":"Eflexervices Philippines Incorporated","role":"QA Tester","status":"rejected","date":"2026-09-18","salary":"","url":"","notes":"JobStreet marked: unlikely to progress. Location: Manila City, Metro Manila. Posting expired.","updated":1789999999909},{"id":"27eea450-5c69-42dd-b423-77257d56eaea","company":"CRAFT-TEC, Inc.","role":"Software Tester / QA Tester","status":"applied","date":"2026-09-14","salary":"₱25,000 – ₱35,000 per month","url":"","notes":"Applied on JobStreet. Location: Cebu, Central Visayas. Posting expired.","updated":1789999999908},{"id":"7a1d823d-8b27-489e-8414-d26657d7e7f3","company":"BAYTECH BPO CORPORATION","role":"Junior Software QA Tester","status":"rejected","date":"2026-09-16","salary":"","url":"","notes":"JobStreet marked: unlikely to progress. Location: Pasig City, Metro Manila. Posting expired.","updated":1789999999907},{"id":"7ef13c96-4b7e-48bc-b086-49e1df0ee2cf","company":"KYOCERA Document Solutions Development Philippines, Inc.","role":"Software Test Engineer","status":"applied","date":"2026-09-24","salary":"","url":"","notes":"Applied on JobStreet; viewed by employer. Location: Cebu City, Cebu. Posting expired.","updated":1789999999906},{"id":"9010e568-04da-4b5a-af26-1b0f3524fa24","company":"GameOps Inc.","role":"QUALITY ASSURANCE AND LIVEOPS SPECIALIST","status":"rejected","date":"2026-09-27","salary":"","url":"","notes":"JobStreet marked: unlikely to progress. Location: Ortigas, Pasig City, Metro Manila. Posting expired.","updated":1789999999905},{"id":"6d2fb8fb-5063-48c7-8f8d-0dfe71e55afd","company":"VAP","role":"Developer - HTML & CSS (Dayshift - Onsite) w/ SignOn Bonus [S32]","status":"saved","date":"2026-09-14","salary":"","url":"","notes":"Visited employer's application site (not confirmed as applied). Location: Cebu City, Cebu. Posting expired.","updated":1789999999904},{"id":"3cb83a24-1b88-43ea-80d3-07e8a99b1c22","company":"Gitamondoc-Gopaoco Construction Corporation","role":"Front End Developer","status":"applied","date":"2026-09-14","salary":"","url":"","notes":"Applied on JobStreet. Location: Camputhaw, Cebu City, Cebu. Posting expired.","updated":1789999999903},{"id":"9deb1dc7-9ead-4718-835f-fdcb4677c454","company":"Regent Business Process Inc.","role":"Junior Coder","status":"applied","date":"2026-09-13","salary":"","url":"","notes":"Applied on JobStreet. Location: Cebu, Central Visayas. Posting expired.","updated":1789999999902}]</script>
+<script>
+const STAGES=[["saved","Saved"],["applied","Applied"],["interview","Interview"],["offer","Offer"],["rejected","Rejected"]];
+const KEY="job-tracker-v1";
+let apps=[],editing=null,q="",view="board",sort={k:"date",d:-1};
+let group=true,filt={st:new Set(),from:"",to:"",exp:"any"};const collapsed=new Set();
+try{view=localStorage.getItem("job-tracker-view")==="sheet"?"sheet":"board";group=localStorage.getItem("job-tracker-group")!=="0"}catch(e){}
+const isExp=a=>/Posting expired/.test(a.notes||"");
+const match=(a,skipSt)=>{
+  if(!(a.company+" "+a.role).toLowerCase().includes(q))return false;
+  if(!skipSt&&filt.st.size&&!filt.st.has(a.status))return false;
+  if(filt.from&&!(a.date&&a.date>=filt.from))return false;
+  if(filt.to&&!(a.date&&a.date<=filt.to))return false;
+  if(filt.exp==="live"&&isExp(a))return false;
+  if(filt.exp==="expired"&&!isExp(a))return false;
+  return true;
+};
+const SEED=JSON.parse(document.getElementById("seed").textContent);
+try{const s=localStorage.getItem(KEY);apps=s===null?SEED.slice():(JSON.parse(s)||[]);if(s===null)localStorage.setItem(KEY,JSON.stringify(apps))}catch(e){apps=SEED.slice()}
+const $=id=>document.getElementById(id);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(apps))}catch(e){}};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const days=d=>d?Math.max(0,Math.floor((Date.now()-new Date(d+"T00:00"))/864e5)):null;
+$("form").status.innerHTML=STAGES.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+
+function render(){
+  const f=apps.filter(a=>match(a));
+  $("chips").innerHTML=STAGES.map(([k,l])=>`<button class="chip" data-s="${k}" aria-pressed="${filt.st.has(k)}" style="--c:var(--${k})">${l} <span>${apps.filter(a=>match(a,true)&&a.status===k).length}</span></button>`).join("");
+  $("count").textContent=`${f.length} of ${apps.length} shown`;
+  $("fClear").hidden=!(q||filt.st.size||filt.from||filt.to||filt.exp!=="any");
+  $("fGroup").checked=group;
+  const n=s=>apps.filter(a=>a.status===s).length;
+  const active=n("applied")+n("interview");
+  $("summary").textContent=apps.length?`${apps.length} tracked, ${active} active, ${n("offer")} offer${n("offer")===1?"":"s"}`:"Nothing tracked yet. Add your first application.";
+  $("bar").innerHTML=STAGES.map(([k,l])=>`<i title="${l}: ${n(k)}" style="background:var(--${k});flex-grow:${n(k)};flex-basis:0"></i>`).join("");
+  $("legend").innerHTML=STAGES.map(([k,l])=>`<span style="--c:var(--${k})"><b>${n(k)}</b> ${l}</span>`).join("");
+  const shown=STAGES.filter(([k])=>!filt.st.size||filt.st.has(k));
+  $("board").style.setProperty("--n",shown.length);
+  $("board").innerHTML=shown.map(([k,l])=>{
+    const items=f.filter(a=>a.status===k).sort((a,b)=>(b.updated||0)-(a.updated||0));
+    return `<section class="col" data-s="${k}" style="--c:var(--${k})"><h2>${l}<small>${items.length}</small></h2>`+
+    (items.map(a=>{const d=days(a.date);return `<button class="card" draggable="true" data-id="${a.id}" style="--c:var(--${k})">
+      <div class="company">${esc(a.company)}</div><div class="role">${esc(a.role)}</div>
+      <div class="meta"><span>${d===null?"No date":d===0?"Applied today":d+" day"+(d===1?"":"s")+" ago"}</span><span>${esc(a.salary)}</span></div></button>`}).join("")||`<div class="empty">${q?"No matches":"Drag cards here"}</div>`)+`</section>`}).join("");
+  $("board").hidden=view!=="board";$("sheet").hidden=view!=="sheet";
+  $("vBoard").setAttribute("aria-pressed",view==="board");$("vSheet").setAttribute("aria-pressed",view==="sheet");
+  if(view==="sheet")renderSheet(f);
+}
+function renderSheet(f){
+  const cols=[["company","Company"],["role","Role"],["status","Status"],["date","Applied"],["salary","Salary"],["notes","Notes"]];
+  const order=STAGES.map(s=>s[0]);
+  const val=(a,k)=>k==="status"?order.indexOf(a.status):(a[k]||"").toLowerCase();
+  const cmp=(a,b)=>{const x=val(a,sort.k),y=val(b,sort.k);return(x>y?1:x<y?-1:0)*sort.d};
+  const fmt=d=>d?new Date(d+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";
+  const row=a=>`<tr data-id="${a.id}"><td><b>${a.url?`<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.company)}</a>`:esc(a.company)}</b></td><td>${esc(a.role)}</td>
+   <td class="s"><select class="st" data-id="${a.id}" aria-label="Status for ${esc(a.company)}" style="--c:var(--${a.status})">${STAGES.map(([k,l])=>`<option value="${k}"${k===a.status?" selected":""}>${l}</option>`).join("")}</select></td>
+   <td class="d">${fmt(a.date)}</td><td class="d">${esc(a.salary)}</td><td class="n" title="${esc(a.notes)}">${esc(a.notes)}</td></tr>`;
+  const head=`<thead><tr>`+cols.map(([k,l])=>`<th aria-sort="${sort.k===k?(sort.d>0?"ascending":"descending"):"none"}"><button data-k="${k}">${l}${sort.k===k?(sort.d>0?" ▲":" ▼"):""}</button></th>`).join("")+`</tr></thead>`;
+  let body="";
+  if(group){
+    for(const [k,l] of STAGES){
+      const rows=f.filter(a=>a.status===k).sort(cmp);if(!rows.length)continue;
+      const c=collapsed.has(k);
+      body+=`<tr class="grp" data-g="${k}" tabindex="0" aria-expanded="${!c}" style="--c:var(--${k})"><td colspan="6">${c?"▸":"▾"} <b>${l}</b><span class="cnt">${rows.length}</span></td></tr>`+(c?"":rows.map(row).join(""));
+    }
+  }else body=f.slice().sort(cmp).map(row).join("");
+  if(!body)body=`<tr><td colspan="6" class="empty">No applications match these filters.</td></tr>`;
+  $("sheet").innerHTML=`<table>${head}<tbody>${body}</tbody></table>`;
+}
+function openDlg(a){
+  editing=a?a.id:null;const f=$("form");
+  $("dlgTitle").textContent=a?"Edit application":"Add application";
+  for(const k of ["company","role","status","date","salary","url","notes"])f[k].value=a?a[k]||"":(k==="status"?"applied":k==="date"?new Date().toISOString().slice(0,10):"");
+  $("del").hidden=!a;$("dlg").showModal();f.company.focus();
+}
+$("add").onclick=()=>openDlg();
+$("cancel").onclick=()=>$("dlg").close();
+$("del").onclick=()=>{if(confirm("Delete this application?")){apps=apps.filter(a=>a.id!==editing);save();render();$("dlg").close()}};
+$("form").onsubmit=e=>{
+  const f=e.target,data=Object.fromEntries(["company","role","status","date","salary","url","notes"].map(k=>[k,f[k].value.trim()]));
+  if(editing){Object.assign(apps.find(a=>a.id===editing),data,{updated:Date.now()})}
+  else apps.push({id:crypto.randomUUID(),...data,updated:Date.now()});
+  save();render();
+};
+$("search").oninput=e=>{q=e.target.value.toLowerCase();render()};
+
+const setView=v=>{view=v;try{localStorage.setItem("job-tracker-view",v)}catch(e){}render()};
+$("vBoard").onclick=()=>setView("board");$("vSheet").onclick=()=>setView("sheet");
+const sheet=$("sheet");
+sheet.onclick=e=>{
+  const b=e.target.closest("th button");
+  if(b){sort=sort.k===b.dataset.k?{k:sort.k,d:-sort.d}:{k:b.dataset.k,d:b.dataset.k==="date"?-1:1};return render()}
+  const g=e.target.closest("tr.grp");
+  if(g){collapsed.has(g.dataset.g)?collapsed.delete(g.dataset.g):collapsed.add(g.dataset.g);return render()}
+  if(e.target.closest("select,a"))return;
+  const r=e.target.closest("tr[data-id]");if(r)openDlg(apps.find(a=>a.id===r.dataset.id));
+};
+sheet.onchange=e=>{const s=e.target.closest("select.st");if(!s)return;const a=apps.find(x=>x.id===s.dataset.id);a.status=s.value;a.updated=Date.now();save();render()};
+sheet.onkeydown=e=>{if(e.key==="Enter"&&e.target.matches("tr.grp"))e.target.click()};
+$("chips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;const s=c.dataset.s;filt.st.has(s)?filt.st.delete(s):filt.st.add(s);render()};
+$("fFrom").onchange=e=>{filt.from=e.target.value;render()};
+$("fTo").onchange=e=>{filt.to=e.target.value;render()};
+$("fExp").onchange=e=>{filt.exp=e.target.value;render()};
+$("fGroup").onchange=e=>{group=e.target.checked;try{localStorage.setItem("job-tracker-group",group?"1":"0")}catch(_){}render()};
+$("fClear").onclick=()=>{filt={st:new Set(),from:"",to:"",exp:"any"};q="";$("search").value="";$("fFrom").value=$("fTo").value="";$("fExp").value="any";render()};
+const board=$("board");let dragId=null;
+board.onclick=e=>{const c=e.target.closest(".card");if(c)openDlg(apps.find(a=>a.id===c.dataset.id))};
+board.ondragstart=e=>{const c=e.target.closest(".card");if(!c)return;dragId=c.dataset.id;c.classList.add("drag");e.dataTransfer.effectAllowed="move"};
+board.ondragend=()=>{dragId=null;render()};
+board.ondragover=e=>{const c=e.target.closest(".col");if(c){e.preventDefault();document.querySelectorAll(".col").forEach(x=>x.classList.toggle("over",x===c))}};
+board.ondrop=e=>{e.preventDefault();const c=e.target.closest(".col"),a=apps.find(x=>x.id===dragId);if(c&&a){a.status=c.dataset.s;a.updated=Date.now();save()}render()};
+
+$("export").onclick=()=>{const l=document.createElement("a");l.href=URL.createObjectURL(new Blob([JSON.stringify(apps,null,2)],{type:"application/json"}));l.download="job-applications.json";l.click()};
+$("import").onclick=()=>$("file").click();
+$("file").onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!Array.isArray(d))throw 0;apps=d.map(a=>({id:crypto.randomUUID(),updated:Date.now(),...a}));save();render()}catch(_){alert("That file is not a valid export from this tracker.")}e.target.value=""};
+render();
+</script>
+</body>
+</html>
